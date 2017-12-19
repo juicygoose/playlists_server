@@ -21,16 +21,23 @@ def routeHome():
 def home():
     return render_template('home.html')
 
+@app.route('/home', methods=['POST'])
+def goToAddTrackForm():
+    return redirect(url_for('addTrackForm'))
+
 @app.route('/add-track')
-def myForm():
+def addTrackForm():
     return render_template('add-track.html')
 
 @app.route('/add-track', methods=['POST'])
-def addTrack():
+def addTrackPost():
     try:
         new_track = request.form['newTrack']
-        PlaylistsManager().addTrack(new_track)
-        return 'Track "{}" added to the playlist!'.format(new_track), 200
+        mgr = PlaylistsManager()
+        mgr.addTrack(new_track)
+        mgr.searchTrackOnYoutube(new_track)
+
+        return redirect(url_for('getPlaylists'))
 
     except Exception as e:
         return jsonify(str(e)), 500
@@ -38,7 +45,11 @@ def addTrack():
 @app.route('/playlists')
 def getPlaylists():
     try:
-        return jsonify(PlaylistsManager().getPlaylists()), 200
+        pl = PlaylistsManager().getPlaylists()
+        if pl is not None:
+            return jsonify(PlaylistsManager().getPlaylists()), 200
+        else:
+            return redirect(url_for('home'))
 
     except Exception as e:
         return jsonify(str(e)), 500
